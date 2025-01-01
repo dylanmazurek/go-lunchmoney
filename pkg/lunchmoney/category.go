@@ -7,6 +7,7 @@ import (
 	"github.com/dylanmazurek/go-lunchmoney/pkg/lunchmoney/models"
 )
 
+// ListCategory lists all categories.
 func (c *Client) ListCategory() (*[]models.Category, error) {
 	req, err := c.NewRequest(http.MethodGet, constants.API_PATH_CATEGORIES, nil, nil)
 	if err != nil {

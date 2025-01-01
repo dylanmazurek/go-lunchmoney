@@ -11,6 +11,7 @@ import (
 	"github.com/dylanmazurek/go-lunchmoney/pkg/lunchmoney/models"
 )
 
+// FetchAsset fetches an asset by its ID.
 func (c *Client) FetchAsset(assetId int64) (*models.Asset, error) {
 	assets, err := c.ListAsset()
 	if err != nil {
@@ -27,6 +28,7 @@ func (c *Client) FetchAsset(assetId int64) (*models.Asset, error) {
 	return &asset, err
 }
 
+// ListAsset lists all assets.
 func (c *Client) ListAsset() (*[]models.Asset, error) {
 	req, err := c.NewRequest(http.MethodGet, constants.API_PATH_ASSETS, nil, nil)
 	if err != nil {
@@ -39,6 +41,7 @@ func (c *Client) ListAsset() (*[]models.Asset, error) {
 	return &assets.Assets, err
 }
 
+// UpdateAsset updates an asset by its ID.
 func (c *Client) UpdateAsset(id int64, asset *models.Asset) (*models.Asset, error) {
 	assetJson, err := json.Marshal(asset)
 	if err != nil {
