@@ -24,6 +24,7 @@ type ListTransactionFilter struct {
 	TagID           *int64    `url:"tag_id"`
 }
 
+// ListTransaction lists transactions based on the provided filter.
 func (c *Client) ListTransaction(filter ListTransactionFilter) (*[]models.Transaction, error) {
 	params := url.Values{}
 	if filter.AssetID != nil {
@@ -79,6 +80,7 @@ func (c *Client) ListTransaction(filter ListTransactionFilter) (*[]models.Transa
 	return &transactions, nil
 }
 
+// InsertTransactions inserts multiple transactions.
 func (c *Client) InsertTransactions(transactions []models.Transaction, debitAsNegative bool) (*[]int64, error) {
 	insertReqBody := &models.InsertRequest{
 		Transactions:      transactions,
@@ -112,6 +114,7 @@ func (c *Client) InsertTransactions(transactions []models.Transaction, debitAsNe
 	return &transactionInsertResponse.Ids, err
 }
 
+// UpdateTransaction updates a transaction.
 func (c *Client) UpdateTransaction(transaction models.Transaction, debitAsNegative bool) (*bool, error) {
 	updateReqBody := &models.UpdateRequest{
 		Transaction:       transaction,
