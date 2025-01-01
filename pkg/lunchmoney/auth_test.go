@@ -53,3 +53,13 @@ func TestGetUserData(t *testing.T) {
 	assert.NotNil(t, user)
 	assert.IsType(t, &models.User{}, user)
 }
+
+func TestNewAuthClientWithAPIKey(t *testing.T) {
+	ctx := context.Background()
+	apiKey := "test-api-key"
+
+	authClient, err := NewAuthClientWithAPIKey(ctx, apiKey)
+	assert.NoError(t, err)
+	assert.NotNil(t, authClient)
+	assert.Equal(t, apiKey, authClient.session.GetAPIKey())
+}

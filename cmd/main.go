@@ -27,7 +27,13 @@ func main() {
 	}
 
 	flags := getFlags()
-	client, err := lunchmoney.New(ctx, lunchmoney.WithVaultClient(vaultClient))
+
+	var client *lunchmoney.Client
+	if flags.APIKey != "" {
+		client, err = lunchmoney.New(ctx, lunchmoney.WithAPIKey(flags.APIKey))
+	} else {
+		client, err = lunchmoney.New(ctx, lunchmoney.WithVaultClient(vaultClient))
+	}
 	if err != nil {
 		panic(err)
 	}
@@ -79,6 +85,7 @@ func getFlags() models.Flags {
 	flag.StringVar(&flags.AssetID, "assetId", "", "id of the lunchmoney asset account")
 	flag.StringVar(&flags.StartDate, "startDate", today.AddDate(0, 0, -100).Format("2006-01-02"), "start date of the transaction range")
 	flag.StringVar(&flags.EndDate, "endDate", "", "end date of the transaction range")
+	flag.StringVar(&flags.APIKey, "apiKey", "", "Lunchmoney API key")
 
 	flag.Parse()
 

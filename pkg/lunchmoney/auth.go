@@ -27,6 +27,10 @@ type Secrets struct {
 
 // NewAuthClient creates a new AuthClient with the provided options.
 func NewAuthClient(ctx context.Context, opts Options) (*AuthClient, error) {
+	if opts.apiKey != "" {
+		return NewAuthClientWithAPIKey(ctx, opts.apiKey)
+	}
+
 	authClient := &AuthClient{
 		internalClient: &http.Client{Transport: http.DefaultTransport},
 
@@ -42,6 +46,18 @@ func NewAuthClient(ctx context.Context, opts Options) (*AuthClient, error) {
 	authClient.secrets = *secrets
 
 	authClient.session.SetAPIKey(secrets.apiKey)
+
+	return authClient, nil
+}
+
+// NewAuthClientWithAPIKey creates a new AuthClient with the provided API key.
+func NewAuthClientWithAPIKey(ctx context.Context, apiKey string) (*AuthClient, error) {
+	authClient := &AuthClient{
+		internalClient: &http.Client{Transport: http.DefaultTransport},
+		session:        models.Session{},
+	}
+
+	authClient.session.SetAPIKey(apiKey)
 
 	return authClient, nil
 }
