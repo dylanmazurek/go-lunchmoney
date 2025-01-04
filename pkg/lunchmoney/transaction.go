@@ -27,7 +27,7 @@ type ListTransactionFilter struct {
 func (c *Client) ListTransaction(filter ListTransactionFilter) (*[]models.Transaction, error) {
 	params := url.Values{}
 	if filter.AssetID != nil {
-		params.Set("asset_id", fmt.Sprintf("%d", filter.AssetID))
+		params.Set("asset_id", fmt.Sprintf("%d", *filter.AssetID))
 	}
 
 	if filter.Status != nil {

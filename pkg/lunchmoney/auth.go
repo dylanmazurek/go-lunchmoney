@@ -33,14 +33,17 @@ func NewAuthClient(ctx context.Context, opts Options) (*AuthClient, error) {
 		session: models.Session{},
 	}
 
-	secrets, err := initVault(ctx, opts.vaultClient)
-	if err != nil {
-		return nil, err
+	if opts.vaultClient != nil {
+		secrets, err := initVault(ctx, opts.vaultClient)
+		if err != nil {
+			return nil, err
+		}
+
+		authClient.secrets = *secrets
+		authClient.session.SetAPIKey(secrets.apiKey)
+	} else if opts.apiKey != "" {
+		authClient.session.SetAPIKey(opts.apiKey)
 	}
-
-	authClient.secrets = *secrets
-
-	authClient.session.SetAPIKey(secrets.apiKey)
 
 	return authClient, nil
 }

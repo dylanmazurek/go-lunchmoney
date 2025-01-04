@@ -1,7 +1,10 @@
 package models
 
+import "time"
+
 type Flags struct {
-	AssetID   string
-	StartDate string
-	EndDate   string
+	LunchmoneyAPIKey string
+	AssetID          int64
+	StartDate        time.Time
+	EndDate          time.Time
 }

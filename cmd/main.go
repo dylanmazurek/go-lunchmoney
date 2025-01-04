@@ -5,39 +5,37 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
+	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/dylanmazurek/go-lunchmoney/pkg/lunchmoney"
 	"github.com/dylanmazurek/go-lunchmoney/pkg/lunchmoney/models"
-	"github.com/dylanmazurek/go-lunchmoney/pkg/utilities/vault"
+	"github.com/dylanmazurek/go-lunchmoney/pkg/utilities/truncate"
 	"github.com/markkurossi/tabulate"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
 	ctx := context.Background()
-
-	vaultAddr := os.Getenv("VAULT_ADDR")
-	vaultAppRoleId := os.Getenv("VAULT_APP_ROLE_ID")
-	vaultSecretId := os.Getenv("VAULT_SECRET_ID")
-
-	vaultClient, err := vault.NewClient(ctx, vaultAddr, vaultAppRoleId, vaultSecretId)
-	if err != nil {
-		panic(err)
-	}
+	initLogger()
 
 	flags := getFlags()
-	client, err := lunchmoney.New(ctx, lunchmoney.WithVaultClient(vaultClient))
+
+	lunchmoneyOpts := []lunchmoney.Option{
+		lunchmoney.WithAPIKey(flags.LunchmoneyAPIKey),
+	}
+
+	client, err := lunchmoney.New(ctx, lunchmoneyOpts...)
 	if err != nil {
 		panic(err)
 	}
 
-	start, _ := time.Parse("2006-01-02", flags.StartDate)
-	end, _ := time.Parse("2006-01-02", flags.EndDate)
-
 	st := &lunchmoney.ListTransactionFilter{
-		StartDate: start,
-		EndDate:   end,
+		AssetID:   &flags.AssetID,
+		StartDate: flags.StartDate,
+		EndDate:   flags.EndDate,
 	}
 
 	transactions, err := client.ListTransaction(*st)
@@ -52,12 +50,11 @@ func main() {
 	tab.Header("Account Name")
 	tab.Header("Amount")
 	tab.Header("Category")
-	tab.Header("Tags")
 
 	for _, transaction := range *transactions {
 		row := tab.Row()
 		row.Column(transaction.ID.String())
-		row.Column(transaction.OriginalName)
+		row.Column(truncate.TruncateText(transaction.OriginalName, 30))
 		row.Column(transaction.DisplayName)
 		row.Column(transaction.AssetDisplayName)
 		row.Column(fmt.Sprintf("%.2f", transaction.Amount.AsMajorUnits()))
@@ -66,21 +63,65 @@ func main() {
 		} else {
 			row.Column(*transaction.CategoryName)
 		}
-		row.Column(strings.Join(transaction.Tags, ","))
-
-		fmt.Println(tab.String())
 	}
 
+	fmt.Println(tab.String())
+}
+
+func initLogger() {
+	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	log.Logger = logger
 }
 
 func getFlags() models.Flags {
-	flags := models.Flags{}
-	today := time.Now()
+	var flags struct {
+		LunchmoneyAPIKey string
+		AssetID          string
+		StartDate        string
+		EndDate          string
+	}
+
+	flag.StringVar(&flags.LunchmoneyAPIKey, "apiKey", "", "lunchmoney api key")
 	flag.StringVar(&flags.AssetID, "assetId", "", "id of the lunchmoney asset account")
-	flag.StringVar(&flags.StartDate, "startDate", today.AddDate(0, 0, -100).Format("2006-01-02"), "start date of the transaction range")
+	flag.StringVar(&flags.StartDate, "startDate", "", "start date of the transaction range")
 	flag.StringVar(&flags.EndDate, "endDate", "", "end date of the transaction range")
 
 	flag.Parse()
 
-	return flags
+	var parsedFlags models.Flags
+
+	parsedFlags.LunchmoneyAPIKey = flags.LunchmoneyAPIKey
+	if parsedFlags.LunchmoneyAPIKey == "" {
+		lunchmoneyAPIKey, envExists := os.LookupEnv("LUNCHMONEY_API_KEY")
+		if envExists {
+			parsedFlags.LunchmoneyAPIKey = lunchmoneyAPIKey
+			log.Info().Msg("using LUNCHMONEY_API_KEY environment variable")
+		}
+	}
+
+	apiKeyRegex := regexp.MustCompile(`(?i)^[a-z0-9]{50}$`)
+	isValidKey := apiKeyRegex.MatchString(parsedFlags.LunchmoneyAPIKey)
+	if !isValidKey {
+		log.Panic().Msg("apiKey must be a 50 character alphanumeric string")
+	}
+
+	assetId, err := strconv.ParseInt(flags.AssetID, 10, 64)
+	if err != nil {
+		log.Panic().Msg("assetId must be an integer")
+	}
+	parsedFlags.AssetID = assetId
+
+	startDate, err := time.Parse("2006-01-02", flags.StartDate)
+	if err != nil {
+		log.Panic().Msg("startDate must be in the format yyyy-mm-dd")
+	}
+	parsedFlags.StartDate = startDate
+
+	endDate, err := time.Parse("2006-01-02", flags.EndDate)
+	if err != nil {
+		log.Panic().Msg("endDate must be in the format yyyy-mm-dd")
+	}
+	parsedFlags.EndDate = endDate
+
+	return parsedFlags
 }
