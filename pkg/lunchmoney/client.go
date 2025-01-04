@@ -19,6 +19,7 @@ type Client struct {
 	internalClient *http.Client
 }
 
+// New creates a new Client with the provided options.
 func New(ctx context.Context, opts ...Option) (*Client, error) {
 	clientLog = zerolog.Ctx(ctx).With().Str("client", "lunchmoney").Logger()
 
@@ -48,6 +49,7 @@ func New(ctx context.Context, opts ...Option) (*Client, error) {
 	return newServiceClient, nil
 }
 
+// NewRequest creates a new HTTP request with the provided method, path, body, and parameters.
 func (c *Client) NewRequest(method string, path string, body io.Reader, params *url.Values) (*models.Request, error) {
 	urlString := fmt.Sprintf("%s%s", constants.API_BASE_URL, path)
 	requestUrl, err := url.Parse(urlString)
@@ -75,6 +77,7 @@ func (c *Client) NewRequest(method string, path string, body io.Reader, params *
 	return request, nil
 }
 
+// Do sends an HTTP request and decodes the response into the provided response object.
 func (c *Client) Do(req *models.Request, resp interface{}) error {
 	httpResponse, err := c.internalClient.Do(req.HTTPRequest)
 	if err != nil || httpResponse == nil || httpResponse.StatusCode >= 400 {

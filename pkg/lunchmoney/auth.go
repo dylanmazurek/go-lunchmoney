@@ -25,6 +25,7 @@ type Secrets struct {
 	apiKey string
 }
 
+// NewAuthClient creates a new AuthClient with the provided options.
 func NewAuthClient(ctx context.Context, opts Options) (*AuthClient, error) {
 	authClient := &AuthClient{
 		internalClient: &http.Client{Transport: http.DefaultTransport},
@@ -73,6 +74,7 @@ func (adt *addAuthHeaderTransport) RoundTrip(req *http.Request) (*http.Response,
 	return adt.T.RoundTrip(req)
 }
 
+// InitTransportSession initializes a transport session for the AuthClient.
 func (c *AuthClient) InitTransportSession() (*http.Client, error) {
 	currentAPIKey := c.session.GetAPIKey()
 	if currentAPIKey == "" {
@@ -97,6 +99,7 @@ func (c *AuthClient) InitTransportSession() (*http.Client, error) {
 	return authTransport, err
 }
 
+// getUserData fetches user data using the provided API key.
 func (c *AuthClient) getUserData(apiKey string) (*models.User, error) {
 	path := fmt.Sprintf("%s%s", constants.API_BASE_URL, constants.API_PATH_ME)
 
